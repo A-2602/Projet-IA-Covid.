@@ -74,6 +74,12 @@ if df is not None:
             pneu = c1.checkbox("Pneumonie")
             diab = c2.checkbox("Diabète")
             hip = c3.checkbox("Hypertension")
+           
+            cardio = st.checkbox("Maladies cardiovasculaires ?")
+            obe = st.checkbox("Obésité ?")
+            renal = st.checkbox("Insuffisance rénale chronique ?")
+            tab  = st.checkbox("Tabagisme ?")
+            ast = st.checkbox("Asthme ?")
         
         st.divider()
         
@@ -87,4 +93,5 @@ if df is not None:
                 st.write("Le patient présente des facteurs stables pour un suivi à domicile.")
 
 else:
+
     st.warning("Veuillez placer le fichier 'covid19_data_nettoye.csv' dans le même dossier que ce script.")
