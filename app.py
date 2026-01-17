@@ -21,6 +21,7 @@ def load_data():
         df = pd.read_csv(file_name)
         # Création de la colonne DEATH si elle n'existe pas pour l'analyse
         if 'DATE_DIED' in df.columns:
+            # On considère comme décédé si la date n'est pas la valeur par défaut 9999-99-99
             df['DEATH'] = (df['DATE_DIED'] != '9999-99-99').astype(int)
         return df
     else:
@@ -35,7 +36,7 @@ if df is not None:
     menu = st.sidebar.selectbox("Navigation", ["Analyse Exploratoire", "Modèle de Prédiction"])
 
     if menu == "Analyse Exploratoire":
-        st.header("🔍 Analyse des Données Cliniques")
+        st.header("🔍 Analyse Descriptive Complète")
         
         # Métriques rapides
         m1, m2, m3 = st.columns(3)
@@ -45,9 +46,6 @@ if df is not None:
             m3.metric("Taux de Mortalité", f"{(df['DEATH'].mean()*100):.1f}%")
 
         st.divider()
-        
-        cif menu == "Analyse Exploratoire":
-        st.header("🔍 Analyse Descriptive Complète")
         
         # --- PREMIÈRE LIGNE : GENRE ET ÂGE ---
         col1, col2 = st.columns(2)
@@ -77,7 +75,7 @@ if df is not None:
             # Filtrage des cas critiques (décès)
             critiques = df[df['DEATH'] == 1]
             
-            # Calcul des fréquences pour chaque pathologie
+            # Calcul des fréquences pour chaque pathologie (on vérifie si la valeur est 1 = Oui)
             com_data = {
                 'Pneumonie': (critiques['PNEUMONIA'] == 1).sum(),
                 'Diabète': (critiques['DIABETES'] == 1).sum(),
@@ -95,7 +93,7 @@ if df is not None:
 
         with col4:
             st.subheader("4. Survie par Institution")
-            # Mapping des noms d'institutions
+            # Mapping des noms d'institutions (selon le dictionnaire officiel du dataset)
             medical_unit_names = {
                 1: "SANTÉ LOCALE", 2: "SANTÉ NAT.", 3: "IMSS", 
                 4: "ISSSTE", 12: "PRIVÉ", 13: "AUTRES"
@@ -124,25 +122,34 @@ if df is not None:
             pneu = c1.checkbox("Pneumonie")
             diab = c2.checkbox("Diabète")
             hip = c3.checkbox("Hypertension")
-           
-            cardio = st.checkbox("Maladies cardiovasculaires ?")
-            obe = st.checkbox("Obésité ?")
-            renal = st.checkbox("Insuffisance rénale chronique ?")
-            tab  = st.checkbox("Tabagisme ?")
-            ast = st.checkbox("Asthme ?")
+            
+            c4, c5, c6 = st.columns(3)
+            cardio = c4.checkbox("Maladies cardiovasculaires")
+            obe = c5.checkbox("Obésité")
+            renal = c6.checkbox("Insuffisance rénale chronique")
+            
+            c7, c8 = st.columns(2)
+            tab = c7.checkbox("Tabagisme")
+            ast = c8.checkbox("Asthme")
         
         st.divider()
         
         if st.button("Lancer la Prédiction du Risque"):
-            # Logique simplifiée (tu pourras charger ton modèle .pkl ici plus tard)
-            if age > 60 or pneu:
-                st.error("⚠️ **Résultat : Ce patient est considéré à HAUT RISQUE.**")
-                st.write("Une hospitalisation immédiate est suggérée pour surveillance.")
+            # Logique simplifiée (Logique métier de base)
+            # Un score de risque basé sur les facteurs aggravants connus
+            score_risque = 0
+            if age > 60: score_risque += 2
+            if pneu: score_risque += 3
+            if diab: score_risque += 1
+            if hip: score_risque += 1
+            if renal: score_risque += 2
+
+            if score_risque >= 3:
+                st.error(f"🚨 **RÉSULTAT : Patient à HAUT RISQUE (Score: {score_risque})**")
+                st.write("Une hospitalisation immédiate ou une surveillance étroite est suggérée.")
             else:
-                st.success("✅ **Résultat : Ce patient est considéré à BAS RISQUE.**")
-                st.write("Le patient présente des facteurs stables pour un suivi à domicile.")
+                st.success(f"✅ **RÉSULTAT : Patient à BAS RISQUE (Score: {score_risque})**")
+                st.write("Le patient présente des facteurs stables. Un suivi à domicile peut être envisagé.")
 
 else:
-
     st.warning("Veuillez placer le fichier 'covid19_data_nettoye.csv' dans le même dossier que ce script.")
-
