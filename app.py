@@ -46,20 +46,70 @@ if df is not None:
 
         st.divider()
         
+        cif menu == "Analyse Exploratoire":
+        st.header("🔍 Analyse Descriptive Complète")
+        
+        # --- PREMIÈRE LIGNE : GENRE ET ÂGE ---
         col1, col2 = st.columns(2)
         
         with col1:
-            st.subheader("Répartition par Genre")
-            fig, ax = plt.subplots()
-            sns.countplot(data=df, x='SEX', hue='SEX', palette='pastel', ax=ax, legend=False)
-            ax.set_xticklabels(['Femme (1)', 'Homme (2)'])
-            st.pyplot(fig)
+            st.subheader("1. Répartition par Genre")
+            fig1, ax1 = plt.subplots()
+            sns.countplot(data=df, x='SEX', hue='SEX', palette='pastel', ax=ax1, legend=False)
+            ax1.set_xticklabels(['Femme (1)', 'Homme (2)'])
+            st.pyplot(fig1)
+            st.caption("Distribution globale des patients par sexe.")
 
         with col2:
-            st.subheader("Distribution des Âges")
-            fig, ax = plt.subplots()
-            sns.histplot(df['AGE'], bins=30, kde=True, color="skyblue", ax=ax)
-            st.pyplot(fig)
+            st.subheader("2. Distribution des Âges")
+            fig2, ax2 = plt.subplots()
+            sns.histplot(df['AGE'], bins=30, kde=True, color="skyblue", ax=ax2)
+            st.pyplot(fig2)
+            st.caption("La majorité des patients se situe entre 30 et 60 ans.")
+
+        st.divider()
+
+        # --- DEUXIÈME LIGNE : COMORBIDITÉS ET INSTITUTIONS ---
+        col3, col4 = st.columns(2)
+
+        with col3:
+            st.subheader("3. Comorbidités (Cas Décédés)")
+            # Filtrage des cas critiques (décès)
+            critiques = df[df['DEATH'] == 1]
+            
+            # Calcul des fréquences pour chaque pathologie
+            com_data = {
+                'Pneumonie': (critiques['PNEUMONIA'] == 1).sum(),
+                'Diabète': (critiques['DIABETES'] == 1).sum(),
+                'Hypertension': (critiques['HIPERTENSION'] == 1).sum(),
+                'Obésité': (critiques['OBESITY'] == 1).sum()
+            }
+            
+            com_df = pd.DataFrame(list(com_data.items()), columns=['Maladie', 'Nombre'])
+            com_df = com_df.sort_values(by='Nombre', ascending=False)
+
+            fig3, ax3 = plt.subplots()
+            sns.barplot(data=com_df, x='Nombre', y='Maladie', palette='Reds_r', ax=ax3)
+            st.pyplot(fig3)
+            st.caption("La pneumonie est le facteur le plus fréquent chez les cas critiques.")
+
+        with col4:
+            st.subheader("4. Survie par Institution")
+            # Mapping des noms d'institutions
+            medical_unit_names = {
+                1: "SANTÉ LOCALE", 2: "SANTÉ NAT.", 3: "IMSS", 
+                4: "ISSSTE", 12: "PRIVÉ", 13: "AUTRES"
+            }
+            df['UNIT_NAME'] = df['MEDICAL_UNIT'].map(medical_unit_names).fillna("AUTRES")
+            
+            # Calcul du taux de survie (1 - moyenne de décès) * 100
+            survie_stats = df.groupby('UNIT_NAME')['DEATH'].apply(lambda x: (1 - x.mean()) * 100).sort_values()
+
+            fig4, ax4 = plt.subplots()
+            survie_stats.plot(kind='barh', color='lightgreen', ax=ax4)
+            ax4.set_xlabel("Taux de Survie (%)")
+            st.pyplot(fig4)
+            st.caption("Comparaison de la performance de survie entre les types d'unités.")
 
     elif menu == "Modèle de Prédiction":
         st.header("🤖 Prédire le Risque Patient")
@@ -95,3 +145,4 @@ if df is not None:
 else:
 
     st.warning("Veuillez placer le fichier 'covid19_data_nettoye.csv' dans le même dossier que ce script.")
+
